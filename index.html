@@ -233,13 +233,13 @@
             var searchControl = new L.Control.Search({
                 layer: jmlh_pddk,
                 propertyName: 'DESA_KELUR',
-                zoom: 9,
+                zoom: 15,
                 marker: false,
                 autoType: false,
                 minLength: 2,
                 moveToLocation: function (latlng, title, map) {
                     // Zoom ke lokasi
-                    map.setView(latlng, 8);
+                    map.setView(latlng, 13);
                 }
             });
 
