@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Leaflet JS</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-search/dist/leaflet-search.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+        integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <style>
+        #map {
+            width: 100%;
+            height: calc(100vh - 56px);
+        }
+
+        /* CSS untuk watermark */
+        #watermark {
+            position: absolute;
+            bottom: 10px; /* Jarak dari bawah */
+            left: 10px;   /* Jarak dari kiri */
+            opacity: 1; /* Transparansi gambar */
+            z-index: 1000; /* Agar berada di atas peta */
+            width: 100px; /* Atur lebar sesuai kebutuhan */
+            height: auto; /* Atur tinggi otomatis */
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg bg-body-tertiary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Penajam Paser Utara</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
+                aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav ms-auto mb-13 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="https://www.geoportal.penajamkab.go.id/" target="_blank"><i
+                                class="fa-solid fa-map-location-dot"></i> Sumber Data</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="infoButton" data-bs-toggle="modal"
+                            data-bs-target="#featureModal">
+                            <i class="fa-solid fa-circle-info"></i> Info
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div id="map"></div>
+    <img id="watermark" src="data/watermark.png" alt="Watermark" />
+
+    <!-- Modal -->
+    <div class="modal fade" id="featureModal" tabindex="-1" aria-labelledby="featureModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="featureModalTitle">Info Feature</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="modalBodyContent">
+                    <!-- Konten akan diisi secara dinamis -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script>
+        // Inisialisasi peta
+        var map = L.map("map").setView([-1.2059134427871012, 116.68996680201542], 10);
+
+        // Tile Layer Base Map
+        var basemap = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution:
+                '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        }).addTo(map);
+
+        // GeoJSON Point Sarana Prasarana
+        var sarana_prasarana = L.geoJSON(null, {
+            pointToLayer: function (feature, latlng) {
+                return L.marker(latlng, {
+                    icon: L.icon({
+                        iconUrl: "icon/home_marker.png",
+                        iconSize: [48, 48],
+                        iconAnchor: [24, 48],
+                        popupAnchor: [0, -48],
+                        tooltipAnchor: [-16, -30],
+                    }),
+                });
+            },
+            onEachFeature: function (feature, layer) {
+                layer.on({
+                    mouseover: function (e) {
+                        layer.bindTooltip(feature.properties.SARANA_PRA, {
+                            direction: "left",
+                            sticky: true,
+                        }).openTooltip();
+                    },
+                    click: function (e) {
+                        $("#featureModalTitle").html("Detail Sarana Prasarana");
+
+                        var popup_content = "<table class='table table-bordered'>" +
+                            "<tr><th>Nama</th><td>" + feature.properties.SARANA_PRA + "</td></tr>" +
+                            "<tr><th>Koordinat</th><td>" + feature.geometry.coordinates[1] + ", " + feature.geometry.coordinates[0] + "</td></tr>" +
+                            "</table>";
+
+                        $("#modalBodyContent").html(popup_content);
+
+                        var myModal = new bootstrap.Modal(document.getElementById('featureModal'), {
+                            keyboard: false
+                        });
+                        myModal.show();
+                    }
+
+                });
+            }
+        });
+
+        $.getJSON("data/sarana_prasarana.geojson", function (data) {
+            sarana_prasarana.addData(data);
+            map.addLayer(sarana_prasarana);
+
+
+        });
+
+        // GeoJSON Polyline Jalan
+        var jalan = L.geoJSON(null, {
+            style: function () {
+                return { color: "red", opacity: 1, weight: 3 };
+            },
+            onEachFeature: function (feature, layer) {
+                layer.on({
+                    mouseover: function (e) {
+                        layer.bindTooltip(feature.properties.FUNGSI_JAL, {
+                            direction: "auto",
+                            sticky: true,
+                        }).openTooltip();
+                    },
+                    click: function (e) {
+                        $("#featureModalTitle").html("Informasi Jalan");
+
+                        var popup_content = "<table class='table table-bordered'>" +
+                            "<tr><th>Fungsi</th><td>" + feature.properties.FUNGSI_JAL + "</td></tr>" +
+                            "<tr><th>Panjang (m)</th><td>" + feature.properties.PANJANG_M + "</td></tr>" +
+                            "</table>";
+
+                        $("#modalBodyContent").html(popup_content);
+
+                        var myModal = new bootstrap.Modal(document.getElementById('featureModal'), {
+                            keyboard: false
+                        });
+                        myModal.show();
+                    }
+
+                });
+            }
+        });
+
+        $.getJSON("data/jalan.geojson", function (data) {
+            jalan.addData(data);
+            map.addLayer(jalan);
+        });
+
+        // GeoJSON Polygon Jumlah Penduduk
+        var jmlh_pddk = L.geoJSON(null, {
+            style: function (feature) {
+                if (feature.properties.JML_PDDK_1 <= 2500) {
+                    return { color: 'black', weight: 1, fillOpacity: 0.7, fillColor: '#edf8b1' };
+                }
+                if (feature.properties.JML_PDDK_1 > 2500 && feature.properties.JML_PDDK_1 <= 5000) {
+                    return { color: 'black', weight: 1, fillOpacity: 0.7, fillColor: '#7fcdbb' };
+                }
+                return { color: 'black', weight: 1, fillOpacity: 0.7, fillColor: '#2c7fb8' };
+            },
+            onEachFeature: function (feature, layer) {
+                layer.on({
+                    mouseover: function (e) {
+                        layer.bindTooltip(feature.properties.DESA_KELUR, {
+                            direction: "auto",
+                            sticky: true,
+                        }).openTooltip();
+                    },
+                    click: function (e) {
+                        $("#featureModalTitle").html("Informasi Jumlah Penduduk");
+
+                        var popup_content = "<table class='table table-bordered'>" +
+                            "<tr><th>Kecamatan</th><td>" + feature.properties.KECAMATAN + "</td></tr>" +
+                            "<tr><th>Jumlah Penduduk</th><td>" + feature.properties.JML_PDDK_1 + "</td></tr>" +
+                            "<tr><th>Desa / Kelurahan</th><td>" + feature.properties.DESA_KELUR + "</td></tr>" +
+                            "</table>";
+
+                        $("#modalBodyContent").html(popup_content);
+
+                        var myModal = new bootstrap.Modal(document.getElementById('featureModal'), {
+                            keyboard: false
+                        });
+                        myModal.show();
+                    }
+
+                });
+            }
+        });
+
+        $.getJSON("data/jmlh_pddk.geojson", function (data) {
+            jmlh_pddk.addData(data);
+            map.addLayer(jmlh_pddk);
+
+            // Tambahkan kontrol pencarian setelah data dimuat
+            var searchControl = new L.Control.Search({
+                layer: jmlh_pddk,
+                propertyName: 'DESA_KELUR',
+                zoom: 15,
+                marker: false,
+                autoType: false,
+                minLength: 2,
+                moveToLocation: function (latlng, title, map) {
+                    // Zoom ke lokasi
+                    map.setView(latlng, 8);
+                }
+            });
+
+            map.addControl(searchControl);
+        });
+
+
+        // Definisikan objek untuk menyimpan semua layer yang bisa diatur
+        var overlayMaps = {
+            "Jalan": jalan,
+            "Sarana Prasarana": sarana_prasarana,
+            "Jumlah Penduduk": jmlh_pddk
+        };
+
+        // Tambahkan kontrol layer ke dalam peta
+        L.control.layers(null, overlayMaps, { collapsed: false }).addTo(map);
+
+        $(document).ready(function () {
+            $('#infoButton').on('click', function () {
+                updateModal("Informasi Pembuat", "<p><strong>Nama:</strong> Frendy Ade Wicaksono</p>" +
+                    "<p><strong>NIM:</strong> 23/523180/SV/23868</p>" +
+                    "<p><strong>Kelas:</strong> B</p>" +
+                    "<p><strong>GitHub:</strong> <a href='https://github.com/frendyadew/' target='_blank'>https://github.com/frendyadew/</a></p>");
+            });
+
+            // Event listener untuk menutup modal
+            $('#featureModal').on('hidden.bs.modal', function () {
+                $(this).removeData('bs.modal'); // Menghapus data modal
+                $("#modalBodyContent").html(""); // Kosongkan konten
+
+                // Menghapus overlay hitam secara manual
+                $('.modal-backdrop').remove();
+                $('body').removeClass('modal-open'); // Menghapus class 'modal-open' yang menyebabkan overlay tetap muncul
+            });
+        });
+
+        function updateModal(title, content) {
+            $("#featureModalTitle").html(title);
+            $("#modalBodyContent").html(content);
+
+            var myModal = new bootstrap.Modal(document.getElementById('featureModal'), {
+                keyboard: false
+            }); 
+            myModal.show();
+        }
+    </script>
+    <script src="https://unpkg.com/leaflet-search/dist/leaflet-search.src.js"></script>
+</body>
+
+</html>
