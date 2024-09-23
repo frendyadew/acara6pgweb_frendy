@@ -61,6 +61,9 @@
 
     <div id="map"></div>
     <img id="watermark" src="data/watermark.png" alt="Watermark" />
+    <button id="homeButton" class="btn btn-primary" style="position: absolute; top: 10px; left: 10px; z-index: 1000;">
+        Home
+    </button>
 
     <!-- Modal -->
     <div class="modal fade" id="featureModal" tabindex="-1" aria-labelledby="featureModalLabel" aria-hidden="true">
@@ -230,7 +233,7 @@
             var searchControl = new L.Control.Search({
                 layer: jmlh_pddk,
                 propertyName: 'DESA_KELUR',
-                zoom: 15,
+                zoom: 9,
                 marker: false,
                 autoType: false,
                 minLength: 2,
